@@ -7,3 +7,5 @@ unit_test
 check_checksum
 find_records
 out_csv/
+.antigravity/
+.antigravitycli/
