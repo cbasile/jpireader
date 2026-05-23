@@ -1,4 +1,5 @@
-#include "metadata_util.h"
+#include "src/metadata_util.h"
+
 #include <stdexcept>
 
 namespace jpireader {
@@ -42,11 +43,13 @@ bool MetadataUtil::IsTwinEngine() const {
 }
 
 bool MetadataUtil::IsGallonsPerHour() const {
-  return metadata_.fuel.fuel_flow_units.value_or(FuelFlowUnits::GPH) == FuelFlowUnits::GPH;
+  return metadata_.fuel.fuel_flow_units.value_or(FuelFlowUnits::GPH) ==
+         FuelFlowUnits::GPH;
 }
 
 int MetadataUtil::GetNextFlightNumber(int flight_number) const {
-  auto it = std::find(flight_numbers_.begin(), flight_numbers_.end(), flight_number);
+  auto it =
+      std::find(flight_numbers_.begin(), flight_numbers_.end(), flight_number);
   if (it == flight_numbers_.end() || std::next(it) == flight_numbers_.end()) {
     throw std::runtime_error("No next flight number");
   }
@@ -56,6 +59,33 @@ int MetadataUtil::GetNextFlightNumber(int flight_number) const {
 bool MetadataUtil::IsLastFlight(int flight_number) const {
   if (flight_numbers_.empty()) return true;
   return flight_numbers_.back() == flight_number;
+}
+
+int64_t MetadataUtil::Timegm(const std::tm& tm) {
+  static const int days_before_month[] = {0,   31,  59,  90,  120, 151,
+                                          181, 212, 243, 273, 304, 334};
+
+  int year = tm.tm_year + 1900;
+  int month = tm.tm_mon;     // 0-11
+  int day = tm.tm_mday - 1;  // 0-based
+
+  // Calculate leap years before this year
+  int leap_days = (year - 1) / 4 - (year - 1) / 100 + (year - 1) / 400 -
+                  (1969 / 4 - 1969 / 100 + 1969 / 400);
+
+  int64_t epoch_days =
+      (year - 1970) * 365 + leap_days + days_before_month[month] + day;
+
+  // Add a leap day for the current year if we are past February and it's a leap
+  // year
+  if (month > 1) {
+    bool is_leap = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0));
+    if (is_leap) {
+      epoch_days += 1;
+    }
+  }
+
+  return epoch_days * 86400 + tm.tm_hour * 3600 + tm.tm_min * 60 + tm.tm_sec;
 }
 
 }  // namespace jpireader

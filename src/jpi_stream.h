@@ -1,10 +1,10 @@
-#ifndef JPIREADER_JPI_STREAM_H_
-#define JPIREADER_JPI_STREAM_H_
+#ifndef SRC_JPI_STREAM_H_
+#define SRC_JPI_STREAM_H_
 
 #include <fstream>
-#include <vector>
-#include <string>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace jpireader {
 
@@ -23,7 +23,6 @@ class JpiStream {
   int GetCurrentRecordSize() const;
   std::string GetCurrentRecordAsHexString() const;
   std::optional<std::string> GetChecksumFailureMessage();
-  bool IsEndOfFile();
 
  private:
   std::ifstream stream_;
@@ -33,4 +32,4 @@ class JpiStream {
 
 }  // namespace jpireader
 
-#endif  // JPIREADER_JPI_STREAM_H_
+#endif  // SRC_JPI_STREAM_H_

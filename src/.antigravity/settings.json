@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "command(*)",
+      "write_file(*)",
+      "read_file(*)"
+    ],
+    "ask": [
+      "command(git commit)"
+    ],
+    "deny": []
+  }
+}

@@ -1,15 +1,19 @@
-#ifndef JPIREADER_METADATA_UTIL_H_
-#define JPIREADER_METADATA_UTIL_H_
+#ifndef SRC_METADATA_UTIL_H_
+#define SRC_METADATA_UTIL_H_
 
-#include "jpi_types.h"
-#include <vector>
 #include <algorithm>
+#include <ctime>
+#include <vector>
+
+#include "src/jpi_types.h"
 
 namespace jpireader {
 
 class MetadataUtil {
  public:
   explicit MetadataUtil(const Metadata& metadata);
+
+  static int64_t Timegm(const std::tm& tm);
 
   bool HasProtocolHeader() const;
   bool HasExtraFlightHeaderConfiguration() const;
@@ -30,4 +34,4 @@ class MetadataUtil {
 
 }  // namespace jpireader
 
-#endif  // JPIREADER_METADATA_UTIL_H_
+#endif  // SRC_METADATA_UTIL_H_

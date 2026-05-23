@@ -1,10 +1,15 @@
-#include "metadata_parser.h"
-#include "sensor_parser.h"
-#include "bit_set.h"
-#include <sstream>
-#include <iomanip>
+#include "src/metadata_parser.h"
+
 #include <algorithm>
 #include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include "src/bit_set.h"
+#include "src/metadata_util.h"
+#include "src/sensor_parser.h"
 
 namespace jpireader {
 
@@ -16,12 +21,14 @@ std::vector<std::string> Split(const std::string& s, char delimiter) {
   std::istringstream tokenStream(s);
   while (std::getline(tokenStream, token, delimiter)) {
     // Trim whitespace
-    token.erase(token.begin(), std::find_if(token.begin(), token.end(), [](unsigned char ch) {
-      return !std::isspace(ch);
-    }));
-    token.erase(std::find_if(token.rbegin(), token.rend(), [](unsigned char ch) {
-      return !std::isspace(ch);
-    }).base(), token.end());
+    token.erase(token.begin(),
+                std::find_if(token.begin(), token.end(), [](unsigned char ch) {
+                  return !std::isspace(ch);
+                }));
+    token.erase(std::find_if(token.rbegin(), token.rend(),
+                             [](unsigned char ch) { return !std::isspace(ch); })
+                    .base(),
+                token.end());
     tokens.push_back(token);
   }
   // If the string ends with a delimiter, add an empty string
@@ -33,7 +40,8 @@ std::vector<std::string> Split(const std::string& s, char delimiter) {
 
 }  // namespace
 
-MetadataParser::HeaderStream::HeaderStream(JpiStream& stream) : stream_(stream) {
+MetadataParser::HeaderStream::HeaderStream(JpiStream& stream)
+    : stream_(stream) {
   stream_.ResetCounter();
 }
 
@@ -52,10 +60,11 @@ std::string MetadataParser::HeaderStream::ReadLine() {
 std::vector<std::string> MetadataParser::HeaderStream::NextHeader() {
   current_failure_message_ = std::nullopt;
   std::string line = ReadLine();
-  
+
   size_t star_pos = line.find('*');
   if (star_pos == std::string::npos) {
-    throw std::runtime_error("Expected a checksum denoted with * in line: " + line);
+    throw std::runtime_error("Expected a checksum denoted with * in line: " +
+                             line);
   }
 
   std::string data = line.substr(0, star_pos);
@@ -75,17 +84,20 @@ std::vector<std::string> MetadataParser::HeaderStream::NextHeader() {
     int actual_checksum = std::stoi(actual_checksum_string, nullptr, 16);
     if (computed_checksum != actual_checksum) {
       std::stringstream ss;
-      ss << "Checksum mismatch actual " << std::hex << std::uppercase << actual_checksum 
-         << " vs expected " << computed_checksum << ":\n" << payload;
+      ss << "Checksum mismatch actual " << std::hex << std::uppercase
+         << actual_checksum << " vs expected " << computed_checksum << ":\n"
+         << payload;
       current_failure_message_ = ss.str();
     }
     return Split(payload, ',');
   } catch (const std::exception& e) {
-    throw std::runtime_error("Checksum byte malformed: " + std::string(e.what()) + " in line: " + line);
+    throw std::runtime_error("Checksum byte malformed: " +
+                             std::string(e.what()) + " in line: " + line);
   }
 }
 
-std::optional<std::string> MetadataParser::HeaderStream::GetChecksumFailureMessage() const {
+std::optional<std::string>
+MetadataParser::HeaderStream::GetChecksumFailureMessage() const {
   return current_failure_message_;
 }
 
@@ -106,15 +118,13 @@ Metadata MetadataParser::Parse() {
     if (!ParseHeaderToMetadata(header, metadata)) {
       break;
     }
-    if (num_headers == 128) {
-      throw std::runtime_error("Too many headers");
-    }
   }
   metadata.length = header_stream_.GetCounter();
   return metadata;
 }
 
-bool MetadataParser::ParseHeaderToMetadata(const std::vector<std::string>& header, Metadata& metadata) {
+bool MetadataParser::ParseHeaderToMetadata(
+    const std::vector<std::string>& header, Metadata& metadata) {
   if (header.empty()) return true;
 
   const std::string& prefix = header[0];
@@ -139,18 +149,20 @@ bool MetadataParser::ParseHeaderToMetadata(const std::vector<std::string>& heade
     std::string reg = header[1];
     std::replace(reg.begin(), reg.end(), '_', ' ');
     // Simple trim
-    reg.erase(reg.begin(), std::find_if(reg.begin(), reg.end(), [](unsigned char ch) {
-      return !std::isspace(ch);
-    }));
-    reg.erase(std::find_if(reg.rbegin(), reg.rend(), [](unsigned char ch) {
-      return !std::isspace(ch);
-    }).base(), reg.end());
+    reg.erase(reg.begin(),
+              std::find_if(reg.begin(), reg.end(),
+                           [](unsigned char ch) { return !std::isspace(ch); }));
+    reg.erase(std::find_if(reg.rbegin(), reg.rend(),
+                           [](unsigned char ch) { return !std::isspace(ch); })
+                  .base(),
+              reg.end());
     metadata.registration = reg;
   }
   return true;
 }
 
-void MetadataParser::ParseAlarmThresholds(const std::vector<std::string>& parts, AlarmThresholds& thresholds) {
+void MetadataParser::ParseAlarmThresholds(const std::vector<std::string>& parts,
+                                          AlarmThresholds& thresholds) {
   if (parts.size() < 9) return;
   thresholds.max_volts = std::stod(parts[1]) / 10.0;
   thresholds.min_volts = std::stod(parts[2]) / 10.0;
@@ -162,7 +174,8 @@ void MetadataParser::ParseAlarmThresholds(const std::vector<std::string>& parts,
   thresholds.min_oil_temperature = std::stoi(parts[8]);
 }
 
-void MetadataParser::ParseFuelConfiguration(const std::vector<std::string>& parts, Fuel& fuel) {
+void MetadataParser::ParseFuelConfiguration(
+    const std::vector<std::string>& parts, Fuel& fuel) {
   if (parts.size() < 6) return;
   fuel.fuel_flow_units = static_cast<FuelFlowUnits>(std::stoi(parts[1]) + 1);
   fuel.full_quantity = std::stoi(parts[2]);
@@ -171,7 +184,8 @@ void MetadataParser::ParseFuelConfiguration(const std::vector<std::string>& part
   fuel.k_factor2 = std::stoi(parts[5]);
 }
 
-int64_t MetadataParser::ParseUnixTimestamp(const std::vector<std::string>& parts) {
+int64_t MetadataParser::ParseUnixTimestamp(
+    const std::vector<std::string>& parts) {
   if (parts.size() < 6) return 0;
   int month = std::stoi(parts[1]);
   int day = std::stoi(parts[2]);
@@ -187,10 +201,11 @@ int64_t MetadataParser::ParseUnixTimestamp(const std::vector<std::string>& parts
   tm.tm_min = minute;
   tm.tm_isdst = -1;
 
-  return static_cast<int64_t>(std::mktime(&tm));
+  return MetadataUtil::Timegm(tm);
 }
 
-void MetadataParser::ParseFeatures(const std::vector<std::string>& parts, Features& features) {
+void MetadataParser::ParseFeatures(const std::vector<std::string>& parts,
+                                   Features& features) {
   if (parts.size() < 4) return;
   features.model_number = std::stoi(parts[1]);
   int low = std::stoi(parts[2]);
@@ -199,7 +214,9 @@ void MetadataParser::ParseFeatures(const std::vector<std::string>& parts, Featur
 
   BitSet units(2);
   units.SetWord(0, high);
-  features.engine_temperature_unit = units.TestBit(12) ? TemperatureUnit::FAHRENHEIT : TemperatureUnit::CELSIUS;
+  features.engine_temperature_unit = units.TestBit(12)
+                                         ? TemperatureUnit::FAHRENHEIT
+                                         : TemperatureUnit::CELSIUS;
 
   // Tail parsing for versions
   if (parts.size() > 4) {
@@ -213,7 +230,7 @@ void MetadataParser::ParseFeatures(const std::vector<std::string>& parts, Featur
       features.build_number = std::stoi(tail[1]);
       features.firmware_version = std::stoi(tail[2]);
     } else if (tail.size() >= 1) {
-       features.firmware_version = std::stoi(tail[0]);
+      features.firmware_version = std::stoi(tail[0]);
     }
   }
 }
