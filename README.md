@@ -1,6 +1,6 @@
 # JpiReader
 
-A lightweight, high-performance C++17 library and command-line interface (CLI) to parse JPI engine monitor flight data logs (typically `.JPI` or `.jpi` files from EDM-700, EDM-800, EDM-830, EDM-900, and EDM-960 units) and export them into structured, timezone-independent CSV files.
+A lightweight, high-performance C++20 library and command-line interface (CLI) to parse JPI engine monitor flight data logs (typically `.JPI` or `.jpi` files from EDM-700, EDM-800, EDM-830, EDM-900, and EDM-960 units) and export them into structured, timezone-independent CSV files.
 
 ## Features
 
@@ -28,7 +28,7 @@ A lightweight, high-performance C++17 library and command-line interface (CLI) t
 
 ### Prerequisites
 
-A C++17 compiler (GCC, Clang, or MSVC) and CMake 3.10+.
+A C++20 compiler (GCC, Clang, or MSVC) and CMake 3.10+.
 
 ### Building
 
