@@ -61,6 +61,13 @@ void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index, int v
     na_values_.erase(&metric);
   }
 
+  if (!metric.high_byte_bit.has_value()) {
+    if (!RecordUpdater::HasField(record, metric.proto_path)) {
+      float default_val = GetExistingValueOrDefault(record, metric);
+      RecordUpdater::Update(record, metric.proto_path, default_val);
+    }
+  }
+
   int adjusted_value = value;
   if (sign_flags_.TestBit(metric.low_byte_bit)) {
     adjusted_value = -adjusted_value;
@@ -68,7 +75,8 @@ void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index, int v
   if (metric.IsHighByteBit(bit_index)) {
     adjusted_value <<= 8;
   }
-  float new_value = metric.Scale(metadata_util_, static_cast<float>(adjusted_value));
+  float new_value =
+      metric.Scale(metadata_util_, static_cast<float>(adjusted_value));
   RecordUpdater::Update(record, metric.proto_path, new_value);
 }
 
