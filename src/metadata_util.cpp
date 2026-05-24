@@ -39,7 +39,7 @@ bool MetadataUtil::IsFirmwareVersionAtLeast(int version_number) const {
 }
 
 bool MetadataUtil::IsTwinEngine() const {
-  return IsModelNumber(760) || IsModelNumber(960);
+  return IsModelNumber(760) || IsModelNumber(790) || IsModelNumber(960);
 }
 
 bool MetadataUtil::IsGallonsPerHour() const {

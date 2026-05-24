@@ -1,8 +1,10 @@
 #include "data_record_parser.h"
+
+#include <algorithm>
+#include <stdexcept>
+
 #include "metrics.h"
 #include "record_updater.h"
-#include <stdexcept>
-#include <algorithm>
 
 namespace jpireader {
 
@@ -10,8 +12,12 @@ const int NOT_AVAILABLE_VALUE_MARKER = 0;
 const int MAX_NUM_VALUE_BYTES = 16;
 const int DEFAULT_VALUE = 240;
 
-DataRecordParser::DataRecordParser(const MetadataUtil& metadata_util, JpiStream& stream)
-    : metadata_util_(metadata_util), stream_(stream), value_flags_(MAX_NUM_VALUE_BYTES), sign_flags_(MAX_NUM_VALUE_BYTES) {
+DataRecordParser::DataRecordParser(const MetadataUtil& metadata_util,
+                                   JpiStream& stream)
+    : metadata_util_(metadata_util),
+      stream_(stream),
+      value_flags_(MAX_NUM_VALUE_BYTES),
+      sign_flags_(MAX_NUM_VALUE_BYTES) {
   handlers_ = Metrics::GetBitToMetricMap(metadata_util);
 }
 
@@ -39,14 +45,17 @@ DataRecord DataRecordParser::Parse(const DataRecord* previous_record) {
   return record;
 }
 
-void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index, int value) {
+void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index,
+                                        int value) {
   auto it = handlers_.find(bit_index);
   if (it == handlers_.end()) {
     return;
   }
   const Metric& metric = *it->second;
   if (metric.proto_path.empty()) {
-    record.parse_warnings.push_back("Unexpected value for unsupported metric at bit " + std::to_string(bit_index));
+    record.parse_warnings.push_back(
+        "Unexpected value for unsupported metric at bit " +
+        std::to_string(bit_index));
     return;
   }
 
@@ -61,11 +70,9 @@ void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index, int v
     na_values_.erase(&metric);
   }
 
-  if (!metric.high_byte_bit.has_value()) {
-    if (!RecordUpdater::HasField(record, metric.proto_path)) {
-      float default_val = GetExistingValueOrDefault(record, metric);
-      RecordUpdater::Update(record, metric.proto_path, default_val);
-    }
+  if (!RecordUpdater::HasField(record, metric.proto_path)) {
+    float default_val = GetExistingValueOrDefault(record, metric);
+    RecordUpdater::Update(record, metric.proto_path, default_val);
   }
 
   int adjusted_value = value;
@@ -80,7 +87,8 @@ void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index, int v
   RecordUpdater::Update(record, metric.proto_path, new_value);
 }
 
-float DataRecordParser::GetExistingValueOrDefault(const DataRecord& record, const Metric& metric) {
+float DataRecordParser::GetExistingValueOrDefault(const DataRecord& record,
+                                                  const Metric& metric) {
   if (RecordUpdater::HasField(record, metric.proto_path)) {
     return RecordUpdater::GetValue(record, metric.proto_path);
   } else {
@@ -106,7 +114,9 @@ std::vector<int> DataRecordParser::GetBitIndexesFromMasks(DataRecord& record) {
 
   if (decode_mask != second_decode_mask) {
     // This is a common error in JPI files, but we should probably just warn
-    record.parse_warnings.push_back("Decode mask mismatch: " + std::to_string(decode_mask) + " vs " + std::to_string(second_decode_mask));
+    record.parse_warnings.push_back(
+        "Decode mask mismatch: " + std::to_string(decode_mask) + " vs " +
+        std::to_string(second_decode_mask));
   }
 
   previous_record_repeat_count_ = stream_.Read();
@@ -116,7 +126,8 @@ std::vector<int> DataRecordParser::GetBitIndexesFromMasks(DataRecord& record) {
     if ((decode_mask & (1 << i)) > 0) {
       int next_byte = stream_.Read();
       if (next_byte == 0) {
-        record.parse_warnings.push_back("Value byte is 00 at index " + std::to_string(i));
+        record.parse_warnings.push_back("Value byte is 00 at index " +
+                                        std::to_string(i));
       }
       value_flags_.SetByte(i, next_byte);
     }
@@ -137,11 +148,14 @@ std::vector<int> DataRecordParser::GetBitIndexesFromMasks(DataRecord& record) {
   return bit_indexes;
 }
 
-void DataRecordParser::CalculateExhaustGasTemperatureMaxDiffs(DataRecord& record) {
+void DataRecordParser::CalculateExhaustGasTemperatureMaxDiffs(
+    DataRecord& record) {
   for (auto& engine : record.engine) {
     if (engine.exhaust_gas_temperature.empty()) continue;
-    int max_egt = *std::max_element(engine.exhaust_gas_temperature.begin(), engine.exhaust_gas_temperature.end());
-    int min_egt = *std::min_element(engine.exhaust_gas_temperature.begin(), engine.exhaust_gas_temperature.end());
+    int max_egt = *std::max_element(engine.exhaust_gas_temperature.begin(),
+                                    engine.exhaust_gas_temperature.end());
+    int min_egt = *std::min_element(engine.exhaust_gas_temperature.begin(),
+                                    engine.exhaust_gas_temperature.end());
     engine.max_exhaust_gas_temperature_difference = max_egt - min_egt;
   }
 }
