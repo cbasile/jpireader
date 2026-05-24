@@ -11,15 +11,18 @@
 
 namespace fs = std::filesystem;
 
-void PrintFlightCsv(std::ostream& os, const jpireader::Flight& flight,
-                    int max_engines, int max_egt, int max_cht) {
+void PrintFlightCsv(std::ostream &os, const jpireader::Flight &flight,
+                    int max_engines, int max_egt, int max_cht,
+                    bool is_oat_fahrenheit) {
   // Header
   os << "Flight,Timestamp,Interval,Voltage,OAT";
   for (int e = 0; e < max_engines; ++e) {
     std::string prefix =
         (max_engines > 1) ? ("E" + std::to_string(e + 1) + "_") : "";
-    for (int i = 0; i < max_egt; ++i) os << "," << prefix << "EGT" << (i + 1);
-    for (int i = 0; i < max_cht; ++i) os << "," << prefix << "CHT" << (i + 1);
+    for (int i = 0; i < max_egt; ++i)
+      os << "," << prefix << "EGT" << (i + 1);
+    for (int i = 0; i < max_cht; ++i)
+      os << "," << prefix << "CHT" << (i + 1);
     os << "," << prefix << "RPM";
     os << "," << prefix << "MAP";
     os << "," << prefix << "FuelFlow";
@@ -30,29 +33,41 @@ void PrintFlightCsv(std::ostream& os, const jpireader::Flight& flight,
   os << std::endl;
 
   int64_t current_time = flight.start_timestamp;
-  for (const auto& record : flight.data) {
+  for (const auto &record : flight.data) {
     os << flight.flight_number << ",";
     os << current_time << ",";
     os << flight.recording_interval_secs << ",";
 
     // Voltage
-    if (!record.voltage.empty()) os << record.voltage[0];
+    if (!record.voltage.empty())
+      os << record.voltage[0];
     os << ",";
 
     // OAT
-    if (record.outside_air_temperature) os << *record.outside_air_temperature;
+    if (record.outside_air_temperature) {
+      double oat_val = *record.outside_air_temperature;
+      if (is_oat_fahrenheit) {
+        oat_val = (oat_val - 32.0) * 5.0 / 9.0;
+      }
+      auto old_flags = os.flags();
+      auto old_prec = os.precision();
+      os << std::fixed << std::setprecision(1) << oat_val;
+      os.flags(old_flags);
+      os.precision(old_prec);
+    }
 
     // Engine Data
     for (int e = 0; e < max_engines; ++e) {
-      os << ",";  // separator before each engine field group
+      os << ","; // separator before each engine field group
       if (e < static_cast<int>(record.engine.size())) {
-        const auto& engine = record.engine[e];
+        const auto &engine = record.engine[e];
 
         // EGT
         for (int i = 0; i < max_egt; ++i) {
           if (i < static_cast<int>(engine.exhaust_gas_temperature.size()))
             os << engine.exhaust_gas_temperature[i];
-          if (i < max_egt - 1) os << ",";
+          if (i < max_egt - 1)
+            os << ",";
         }
         os << ",";
 
@@ -60,24 +75,32 @@ void PrintFlightCsv(std::ostream& os, const jpireader::Flight& flight,
         for (int i = 0; i < max_cht; ++i) {
           if (i < static_cast<int>(engine.cylinder_head_temperature.size()))
             os << engine.cylinder_head_temperature[i];
-          if (i < max_cht - 1) os << ",";
+          if (i < max_cht - 1)
+            os << ",";
         }
         os << ",";
 
         // Other Engine metrics
-        if (engine.rpm) os << *engine.rpm;
+        if (engine.rpm)
+          os << *engine.rpm;
         os << ",";
-        if (engine.manifold_pressure) os << *engine.manifold_pressure;
+        if (engine.manifold_pressure)
+          os << *engine.manifold_pressure;
         os << ",";
-        if (!engine.fuel_flow.empty()) os << engine.fuel_flow[0];
+        if (!engine.fuel_flow.empty())
+          os << engine.fuel_flow[0];
         os << ",";
-        if (!engine.fuel_used.empty()) os << engine.fuel_used[0];
+        if (!engine.fuel_used.empty())
+          os << engine.fuel_used[0];
         os << ",";
-        if (engine.oil_temperature) os << *engine.oil_temperature;
+        if (engine.oil_temperature)
+          os << *engine.oil_temperature;
         os << ",";
-        if (engine.oil_pressure) os << *engine.oil_pressure;
+        if (engine.oil_pressure)
+          os << *engine.oil_pressure;
       } else {
-        for (int i = 0; i < max_egt + max_cht + 5; ++i) os << ",";
+        for (int i = 0; i < max_egt + max_cht + 5; ++i)
+          os << ",";
       }
     }
 
@@ -86,7 +109,7 @@ void PrintFlightCsv(std::ostream& os, const jpireader::Flight& flight,
   }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   if (argc < 3) {
     std::cerr << "Usage: " << argv[0] << " <jpi_file> <output_directory>"
               << std::endl;
@@ -111,11 +134,11 @@ int main(int argc, char* argv[]) {
     int max_engines = 0;
     int max_egt = 0;
     int max_cht = 0;
-    for (const auto& flight : jpi_file.flights) {
-      for (const auto& record : flight.data) {
+    for (const auto &flight : jpi_file.flights) {
+      for (const auto &record : flight.data) {
         max_engines =
             std::max(max_engines, static_cast<int>(record.engine.size()));
-        for (const auto& engine : record.engine) {
+        for (const auto &engine : record.engine) {
           max_egt = std::max(
               max_egt, static_cast<int>(engine.exhaust_gas_temperature.size()));
           max_cht = std::max(
@@ -129,7 +152,22 @@ int main(int argc, char* argv[]) {
     std::cout << "Processing " << jpi_file.flights.size() << " flights from "
               << jpi_filename << "..." << std::endl;
 
-    for (const auto& flight : jpi_file.flights) {
+    bool is_oat_fahrenheit = false;
+    if (jpi_file.metadata.features.oat_temperature_unit ==
+        jpireader::TemperatureUnit::FAHRENHEIT) {
+      is_oat_fahrenheit = true;
+    }
+    for (const auto &flight : jpi_file.flights) {
+      for (const auto &record : flight.data) {
+        if (record.outside_air_temperature &&
+            *record.outside_air_temperature > 40) {
+          is_oat_fahrenheit = true;
+          break;
+        }
+      }
+    }
+
+    for (const auto &flight : jpi_file.flights) {
       std::string out_filename =
           "flight_" + std::to_string(flight.flight_number) + ".csv";
       fs::path out_path = output_dir / out_filename;
@@ -141,13 +179,14 @@ int main(int argc, char* argv[]) {
         continue;
       }
 
-      PrintFlightCsv(ofs, flight, max_engines, max_egt, max_cht);
+      PrintFlightCsv(ofs, flight, max_engines, max_egt, max_cht,
+                     is_oat_fahrenheit);
       std::cout << "  Wrote " << out_path << " (" << flight.data.size()
                 << " records)" << std::endl;
     }
 
     std::cout << "Done." << std::endl;
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     std::cerr << "Error: " << e.what() << std::endl;
     return 1;
   }

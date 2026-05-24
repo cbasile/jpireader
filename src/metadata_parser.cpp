@@ -15,7 +15,7 @@ namespace jpireader {
 
 namespace {
 
-std::vector<std::string> Split(const std::string& s, char delimiter) {
+std::vector<std::string> Split(const std::string &s, char delimiter) {
   std::vector<std::string> tokens;
   std::string token;
   std::istringstream tokenStream(s);
@@ -38,9 +38,9 @@ std::vector<std::string> Split(const std::string& s, char delimiter) {
   return tokens;
 }
 
-}  // namespace
+} // namespace
 
-MetadataParser::HeaderStream::HeaderStream(JpiStream& stream)
+MetadataParser::HeaderStream::HeaderStream(JpiStream &stream)
     : stream_(stream) {
   stream_.ResetCounter();
 }
@@ -90,7 +90,7 @@ std::vector<std::string> MetadataParser::HeaderStream::NextHeader() {
       current_failure_message_ = ss.str();
     }
     return Split(payload, ',');
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     throw std::runtime_error("Checksum byte malformed: " +
                              std::string(e.what()) + " in line: " + line);
   }
@@ -105,7 +105,7 @@ int MetadataParser::HeaderStream::GetCounter() const {
   return stream_.GetCounter();
 }
 
-MetadataParser::MetadataParser(JpiStream& stream) : header_stream_(stream) {}
+MetadataParser::MetadataParser(JpiStream &stream) : header_stream_(stream) {}
 
 Metadata MetadataParser::Parse() {
   Metadata metadata;
@@ -124,10 +124,11 @@ Metadata MetadataParser::Parse() {
 }
 
 bool MetadataParser::ParseHeaderToMetadata(
-    const std::vector<std::string>& header, Metadata& metadata) {
-  if (header.empty()) return true;
+    const std::vector<std::string> &header, Metadata &metadata) {
+  if (header.empty())
+    return true;
 
-  const std::string& prefix = header[0];
+  const std::string &prefix = header[0];
   if (prefix == "A") {
     ParseAlarmThresholds(header, metadata.alarm_thresholds);
   } else if (prefix == "C") {
@@ -161,9 +162,10 @@ bool MetadataParser::ParseHeaderToMetadata(
   return true;
 }
 
-void MetadataParser::ParseAlarmThresholds(const std::vector<std::string>& parts,
-                                          AlarmThresholds& thresholds) {
-  if (parts.size() < 9) return;
+void MetadataParser::ParseAlarmThresholds(const std::vector<std::string> &parts,
+                                          AlarmThresholds &thresholds) {
+  if (parts.size() < 9)
+    return;
   thresholds.max_volts = std::stod(parts[1]) / 10.0;
   thresholds.min_volts = std::stod(parts[2]) / 10.0;
   thresholds.max_exhaust_gas_temperature_difference = std::stoi(parts[3]);
@@ -175,8 +177,9 @@ void MetadataParser::ParseAlarmThresholds(const std::vector<std::string>& parts,
 }
 
 void MetadataParser::ParseFuelConfiguration(
-    const std::vector<std::string>& parts, Fuel& fuel) {
-  if (parts.size() < 6) return;
+    const std::vector<std::string> &parts, Fuel &fuel) {
+  if (parts.size() < 6)
+    return;
   fuel.fuel_flow_units = static_cast<FuelFlowUnits>(std::stoi(parts[1]) + 1);
   fuel.full_quantity = std::stoi(parts[2]);
   fuel.warning_quantity = std::stoi(parts[3]);
@@ -184,9 +187,10 @@ void MetadataParser::ParseFuelConfiguration(
   fuel.k_factor2 = std::stoi(parts[5]);
 }
 
-int64_t MetadataParser::ParseUnixTimestamp(
-    const std::vector<std::string>& parts) {
-  if (parts.size() < 6) return 0;
+int64_t
+MetadataParser::ParseUnixTimestamp(const std::vector<std::string> &parts) {
+  if (parts.size() < 6)
+    return 0;
   int month = std::stoi(parts[1]);
   int day = std::stoi(parts[2]);
   int year = std::stoi(parts[3]) + 2000;
@@ -204,9 +208,10 @@ int64_t MetadataParser::ParseUnixTimestamp(
   return MetadataUtil::Timegm(tm);
 }
 
-void MetadataParser::ParseFeatures(const std::vector<std::string>& parts,
-                                   Features& features) {
-  if (parts.size() < 4) return;
+void MetadataParser::ParseFeatures(const std::vector<std::string> &parts,
+                                   Features &features) {
+  if (parts.size() < 4)
+    return;
   features.model_number = std::stoi(parts[1]);
   int low = std::stoi(parts[2]);
   int high = std::stoi(parts[3]);
@@ -217,6 +222,9 @@ void MetadataParser::ParseFeatures(const std::vector<std::string>& parts,
   features.engine_temperature_unit = units.TestBit(12)
                                          ? TemperatureUnit::FAHRENHEIT
                                          : TemperatureUnit::CELSIUS;
+  features.oat_temperature_unit = units.TestBit(10)
+                                      ? TemperatureUnit::FAHRENHEIT
+                                      : TemperatureUnit::CELSIUS;
 
   // Tail parsing for versions
   if (parts.size() > 4) {
@@ -235,4 +243,4 @@ void MetadataParser::ParseFeatures(const std::vector<std::string>& parts,
   }
 }
 
-}  // namespace jpireader
+} // namespace jpireader

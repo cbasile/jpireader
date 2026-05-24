@@ -2,9 +2,9 @@
 #define JPIREADER_JPI_TYPES_H_
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 
 namespace jpireader {
 
@@ -19,12 +19,7 @@ struct AlarmThresholds {
   std::optional<int32_t> max_oil_temperature;
 };
 
-enum class FuelFlowUnits {
-  GPH = 1,
-  PPH = 2,
-  LPH = 3,
-  KPH = 4
-};
+enum class FuelFlowUnits { GPH = 1, PPH = 2, LPH = 3, KPH = 4 };
 
 struct Fuel {
   std::optional<FuelFlowUnits> fuel_flow_units;
@@ -34,10 +29,7 @@ struct Fuel {
   std::optional<int32_t> k_factor2;
 };
 
-enum class TemperatureUnit {
-  FAHRENHEIT = 1,
-  CELSIUS = 2
-};
+enum class TemperatureUnit { FAHRENHEIT = 1, CELSIUS = 2 };
 
 struct Sensors {
   int32_t num_exhaust_gas_temperature = 0;
@@ -59,6 +51,7 @@ struct Features {
   std::optional<int32_t> firmware_version;
   Sensors sensors;
   std::optional<TemperatureUnit> engine_temperature_unit;
+  std::optional<TemperatureUnit> oat_temperature_unit;
   std::optional<int32_t> beta_number;
   std::optional<int32_t> build_number;
 };
@@ -141,6 +134,6 @@ struct JpiFile {
   std::vector<Flight> flights;
 };
 
-}  // namespace jpireader
+} // namespace jpireader
 
-#endif  // JPIREADER_JPI_TYPES_H_
+#endif // JPIREADER_JPI_TYPES_H_
