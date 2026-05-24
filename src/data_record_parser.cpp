@@ -52,7 +52,7 @@ void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index,
     return;
   }
   const Metric& metric = *it->second;
-  if (metric.proto_path.empty()) {
+  if (metric.id == MetricId::kNone) {
     record.parse_warnings.push_back(
         "Unexpected value for unsupported metric at bit " +
         std::to_string(bit_index));
@@ -62,17 +62,21 @@ void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index,
   if (value == NOT_AVAILABLE_VALUE_MARKER) {
     if (na_values_.find(&metric) == na_values_.end()) {
       na_values_[&metric] = GetExistingValueOrDefault(record, metric);
-      RecordUpdater::Clear(record, metric.proto_path);
+      RecordUpdater::Clear(record, metric.id, metric.engine_index,
+                           metric.field_index);
     }
     return;
   } else if (na_values_.find(&metric) != na_values_.end()) {
-    RecordUpdater::Update(record, metric.proto_path, na_values_[&metric]);
+    RecordUpdater::Update(record, metric.id, metric.engine_index,
+                          metric.field_index, na_values_[&metric]);
     na_values_.erase(&metric);
   }
 
-  if (!RecordUpdater::HasField(record, metric.proto_path)) {
+  if (!RecordUpdater::HasField(record, metric.id, metric.engine_index,
+                               metric.field_index)) {
     float default_val = GetExistingValueOrDefault(record, metric);
-    RecordUpdater::Update(record, metric.proto_path, default_val);
+    RecordUpdater::Update(record, metric.id, metric.engine_index,
+                          metric.field_index, default_val);
   }
 
   int adjusted_value = value;
@@ -84,15 +88,18 @@ void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index,
   }
   float new_value =
       metric.Scale(metadata_util_, static_cast<float>(adjusted_value));
-  RecordUpdater::Update(record, metric.proto_path, new_value);
+  RecordUpdater::Update(record, metric.id, metric.engine_index,
+                        metric.field_index, new_value);
 }
 
 float DataRecordParser::GetExistingValueOrDefault(const DataRecord& record,
                                                   const Metric& metric) {
-  if (RecordUpdater::HasField(record, metric.proto_path)) {
-    return RecordUpdater::GetValue(record, metric.proto_path);
+  if (RecordUpdater::HasField(record, metric.id, metric.engine_index,
+                              metric.field_index)) {
+    return RecordUpdater::GetValue(record, metric.id, metric.engine_index,
+                                   metric.field_index);
   } else {
-    if (metric.proto_path == "engine[0].horsepower") return 0;
+    if (metric.id == MetricId::kHorsepower && metric.engine_index == 0) return 0;
     return metric.Scale(metadata_util_, static_cast<float>(DEFAULT_VALUE));
   }
 }
