@@ -312,4 +312,171 @@ void PrintFlightCsv(std::ostream &os, const Flight &flight, int max_engines,
   }
 }
 
+void PrintFlightCsvEdm830(std::ostream &os, const Flight &flight) {
+  // Header
+  os << "INDEX,DATE,TIME,E1,E2,E3,E4,E5,E6,C1,C2,C3,C4,C5,C6,OAT,DIF,CLD,MAP,RPM,"
+        "HP,FF,FF2,OILP,BAT,OILT,USD,USD2,HRS,MARK"
+     << std::endl;
+
+  double start_hrs = 0.0;
+  double end_hrs = 0.0;
+  if (!flight.data.empty()) {
+    if (!flight.data.front().engine.empty() &&
+        flight.data.front().engine[0].hours) {
+      start_hrs = *flight.data.front().engine[0].hours;
+    }
+    if (!flight.data.back().engine.empty() &&
+        flight.data.back().engine[0].hours) {
+      end_hrs = *flight.data.back().engine[0].hours;
+    }
+  }
+  double duration = end_hrs - start_hrs;
+
+  auto old_flags = os.flags();
+  os << "Engine - Tach Start = " << std::fixed << std::setprecision(1)
+     << start_hrs << ",Tach End = " << end_hrs
+     << ",Tach Duration = " << duration << std::endl;
+  os.flags(old_flags);
+
+  int64_t current_time = flight.start_timestamp;
+  bool lean_find_active = false;
+
+  for (size_t idx = 0; idx < flight.data.size(); ++idx) {
+    const auto &record = flight.data[idx];
+    os << idx << ",";
+    os << FormatDate(current_time) << ",";
+    os << FormatTime(current_time) << ",";
+
+    const auto &eng = (record.engine.size() > 0)
+                          ? record.engine[0]
+                          : EngineDataRecord();
+
+    // E1..6
+    for (int i = 0; i < 6; ++i) {
+      if (i < static_cast<int>(eng.exhaust_gas_temperature.size())) {
+        os << " " << eng.exhaust_gas_temperature[i];
+      }
+      os << ",";
+    }
+
+    // C1..6
+    for (int i = 0; i < 6; ++i) {
+      if (i < static_cast<int>(eng.cylinder_head_temperature.size())) {
+        os << " " << eng.cylinder_head_temperature[i];
+      }
+      os << ",";
+    }
+
+    // OAT
+    if (record.outside_air_temperature) {
+      os << " " << *record.outside_air_temperature;
+    }
+    os << ",";
+
+    // DIF
+    if (eng.max_exhaust_gas_temperature_difference) {
+      os << " " << *eng.max_exhaust_gas_temperature_difference;
+    }
+    os << ",";
+
+    // CLD
+    if (eng.cylinder_head_temperature_cooling_rate) {
+      os << " " << *eng.cylinder_head_temperature_cooling_rate;
+    } else {
+      os << " 0";
+    }
+    os << ",";
+
+    // MAP
+    if (eng.manifold_pressure) {
+      auto old_prec = os.precision();
+      os << std::fixed << std::setprecision(1) << *eng.manifold_pressure;
+      os.precision(old_prec);
+    }
+    os << ",";
+
+    // RPM
+    if (eng.rpm) {
+      os << " " << *eng.rpm;
+    }
+    os << ",";
+
+    // HP
+    if (eng.horsepower) {
+      os << " " << *eng.horsepower;
+    }
+    os << ",";
+
+    // FF
+    if (!eng.fuel_flow.empty()) {
+      auto old_prec = os.precision();
+      os << std::fixed << std::setprecision(1) << eng.fuel_flow[0];
+      os.precision(old_prec);
+    }
+    os << ",";
+
+    // FF2
+    os << "NA,";
+
+    // OILP
+    if (eng.oil_pressure) {
+      os << " " << *eng.oil_pressure;
+    }
+    os << ",";
+
+    // BAT
+    if (!record.voltage.empty()) {
+      auto old_prec = os.precision();
+      os << std::fixed << std::setprecision(1) << record.voltage[0];
+      os.precision(old_prec);
+    }
+    os << ",";
+
+    // OILT
+    if (eng.oil_temperature) {
+      os << " " << *eng.oil_temperature;
+    }
+    os << ",";
+
+    // USD
+    if (!eng.fuel_used.empty()) {
+      auto old_prec = os.precision();
+      os << std::fixed << std::setprecision(1) << eng.fuel_used[0];
+      os.precision(old_prec);
+    }
+    os << ",";
+
+    // USD2
+    os << "NA,";
+
+    // HRS
+    if (eng.hours) {
+      auto old_prec = os.precision();
+      os << std::fixed << std::setprecision(1) << *eng.hours;
+      os.precision(old_prec);
+    } else {
+      os << "0.0";
+    }
+    os << ",";
+
+    // MARK
+    int mark_val = static_cast<int>(record.mark);
+    if (mark_val == 2 || mark_val == 4 || mark_val == 242 || mark_val == 244) {
+      os << "[";
+      lean_find_active = true;
+    } else if (mark_val == 3 || mark_val == 5 ||
+               mark_val == 243 || mark_val == 245) {
+      os << "]";
+      lean_find_active = false;
+    }
+    os << std::endl;
+
+    if (lean_find_active) {
+      current_time += 1;
+    } else {
+      current_time += flight.recording_interval_secs;
+    }
+  }
+}
+
 }  // namespace jpireader

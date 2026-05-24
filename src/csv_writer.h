@@ -11,6 +11,8 @@ void PrintFlightCsv(std::ostream &os, const Flight &flight, int max_engines,
 
 void PrintFlightCsvCustom(std::ostream &os, const Flight &flight);
 
+void PrintFlightCsvEdm830(std::ostream &os, const Flight &flight);
+
 }  // namespace jpireader
 
 #endif  // SRC_CSV_WRITER_H_

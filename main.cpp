@@ -87,6 +87,8 @@ int main(int argc, char* argv[]) {
 
       if (jpi_file.metadata.registration == "N111XX") {
         PrintFlightCsvCustom(ofs, flight);
+      } else if (jpi_file.metadata.registration == "edm830") {
+        PrintFlightCsvEdm830(ofs, flight);
       } else {
         PrintFlightCsv(ofs, flight, max_engines, max_egt, max_cht,
                        is_oat_fahrenheit);
