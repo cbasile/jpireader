@@ -20,7 +20,7 @@ add_executable(jpireader
 )
 
 target_include_directories(jpireader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(jpireader PRIVATE -Wall -Wextra)
+target_compile_options(jpireader PRIVATE -Wall -Wextra -O3)
 
 enable_testing()
 
@@ -39,11 +39,13 @@ add_executable(integration_test
     src/sensor_parser.cpp
 )
 target_include_directories(integration_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(integration_test PRIVATE -Wall -Wextra -O3)
 add_executable(unit_test
     tests/unit_test.cpp
     src/bit_set.cpp
     src/sensor_parser.cpp
 )
 target_include_directories(unit_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(unit_test PRIVATE -Wall -Wextra -O3)
 add_test(NAME IntegrationTest COMMAND integration_test)
 add_test(NAME UnitTest COMMAND unit_test)

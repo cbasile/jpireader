@@ -3,11 +3,18 @@
 #include <regex>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace jpireader {
 
 std::vector<RecordUpdater::PathInfo> RecordUpdater::ParsePath(
     const std::string& path) {
+  static std::unordered_map<std::string, std::vector<PathInfo>> cache;
+  auto it = cache.find(path);
+  if (it != cache.end()) {
+    return it->second;
+  }
+
   std::vector<PathInfo> result;
   std::regex re("([a-z_]+)(?:\\[(\\d+)\\])?");
   auto words_begin = std::sregex_iterator(path.begin(), path.end(), re);
@@ -22,6 +29,7 @@ std::vector<RecordUpdater::PathInfo> RecordUpdater::ParsePath(
     }
     result.push_back(info);
   }
+  cache[path] = result;
   return result;
 }
 
