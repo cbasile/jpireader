@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(jpireader
     main.cpp
     src/bit_set.cpp
+    src/csv_writer.cpp
     src/data_record_parser.cpp
     src/flight_parser.cpp
     src/jpi_decoder.cpp
@@ -26,6 +27,7 @@ enable_testing()
 add_executable(integration_test
     tests/integration_test.cpp
     src/bit_set.cpp
+    src/csv_writer.cpp
     src/data_record_parser.cpp
     src/flight_parser.cpp
     src/jpi_decoder.cpp

@@ -3,9 +3,11 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
+#include "src/csv_writer.h"
 #include "src/jpi_decoder.h"
 #include "src/jpi_stream.h"
 
@@ -47,126 +49,38 @@ void TestEdm830() {
   std::cout << "  Passed edm830.jpi" << std::endl;
 }
 
-std::string Trim(const std::string& s) {
-  auto start = s.begin();
-  while (start != s.end() && std::isspace(*start)) {
-    start++;
-  }
-  auto end = s.end();
-  if (start == s.end()) return "";
-  do {
-    end--;
-  } while (std::distance(start, end) > 0 && std::isspace(*end));
-  return std::string(start, end + 1);
-}
-
-std::vector<std::string> SplitCsvLine(const std::string& line) {
-  std::vector<std::string> result;
-  std::string current;
-  for (char c : line) {
-    if (c == ',') {
-      result.push_back(Trim(current));
-      current.clear();
-    } else {
-      current += c;
-    }
-  }
-  result.push_back(Trim(current));
-  return result;
-}
-
 void VerifyFlight158AgainstCsv(const jpireader::Flight& flight,
                                const std::string& csv_path) {
   std::ifstream ifs(csv_path);
   assert(ifs.is_open());
-  std::string line;
-  std::vector<std::vector<std::string>> csv_rows;
-  while (std::getline(ifs, line)) {
-    if (line.starts_with("Left Engine") || line.starts_with("Right Engine") ||
-        line.starts_with("INDEX")) {
-      continue;
+
+  std::stringstream ss;
+  jpireader::PrintFlightCsvCustom(ss, flight);
+
+  std::string ref_line;
+  std::string gen_line;
+  int line_num = 1;
+  while (std::getline(ifs, ref_line)) {
+    // Strip trailing \r if present
+    if (!ref_line.empty() && ref_line.back() == '\r') {
+      ref_line.pop_back();
     }
-    if (line.empty()) continue;
-    csv_rows.push_back(SplitCsvLine(line));
+
+    assert(std::getline(ss, gen_line));
+    if (!gen_line.empty() && gen_line.back() == '\r') {
+      gen_line.pop_back();
+    }
+
+    if (ref_line != gen_line) {
+      std::cerr << "Mismatch at line " << line_num << std::endl;
+      std::cerr << "Ref: [" << ref_line << "]" << std::endl;
+      std::cerr << "Gen: [" << gen_line << "]" << std::endl;
+      assert(false);
+    }
+    line_num++;
   }
-
-  assert(csv_rows.size() == flight.data.size());
-
-  for (size_t i = 0; i < flight.data.size(); ++i) {
-    const auto& record = flight.data[i];
-    const auto& row = csv_rows[i];
-
-    // BAT (Voltage)
-    double bat = std::stod(row[19]);
-    assert(!record.voltage.empty());
-    assert(std::abs(record.voltage[0] - bat) < 0.051);
-
-    // OAT
-    double oat = std::stod(row[15]);
-    assert(record.outside_air_temperature.has_value());
-    assert(std::abs(*record.outside_air_temperature - oat) < 0.051);
-
-    // LE1..6 (exhaust_gas_temperature)
-    assert(record.engine.size() == 2);
-    const auto& engine1 = record.engine[0];
-    assert(engine1.exhaust_gas_temperature.size() == 6);
-    for (int c = 0; c < 6; ++c) {
-      int ref_egt = std::stoi(row[3 + c]);
-      assert(engine1.exhaust_gas_temperature[c] == ref_egt);
-    }
-
-    // LC1..6 (cylinder_head_temperature)
-    assert(engine1.cylinder_head_temperature.size() == 6);
-    for (int c = 0; c < 6; ++c) {
-      int ref_cht = std::stoi(row[9 + c]);
-      assert(engine1.cylinder_head_temperature[c] == ref_cht);
-    }
-
-    // LFF (FuelFlow)
-    double lff = std::stod(row[18]);
-    assert(!engine1.fuel_flow.empty());
-    assert(std::abs(engine1.fuel_flow[0] - lff) < 0.051);
-
-    // LUSD (FuelUsed)
-    double lusd = std::stod(row[21]);
-    assert(!engine1.fuel_used.empty());
-    assert(std::abs(engine1.fuel_used[0] - lusd) < 0.051);
-
-    // LOILT (OilTemp)
-    int loilt = std::stoi(row[20]);
-    assert(engine1.oil_temperature.has_value());
-    assert(*engine1.oil_temperature == loilt);
-
-    // RE1..6
-    const auto& engine2 = record.engine[1];
-    assert(engine2.exhaust_gas_temperature.size() == 6);
-    for (int c = 0; c < 6; ++c) {
-      int ref_egt = std::stoi(row[23 + c]);
-      assert(engine2.exhaust_gas_temperature[c] == ref_egt);
-    }
-
-    // RC1..6
-    assert(engine2.cylinder_head_temperature.size() == 6);
-    for (int c = 0; c < 6; ++c) {
-      int ref_cht = std::stoi(row[29 + c]);
-      assert(engine2.cylinder_head_temperature[c] == ref_cht);
-    }
-
-    // RFF
-    double rff = std::stod(row[37]);
-    assert(!engine2.fuel_flow.empty());
-    assert(std::abs(engine2.fuel_flow[0] - rff) < 0.051);
-
-    // RUSD
-    double rusd = std::stod(row[39]);
-    assert(!engine2.fuel_used.empty());
-    assert(std::abs(engine2.fuel_used[0] - rusd) < 0.051);
-
-    // ROILT
-    int roilt = std::stoi(row[38]);
-    assert(engine2.oil_temperature.has_value());
-    assert(*engine2.oil_temperature == roilt);
-  }
+  // Ensure ss is also exhausted
+  assert(!std::getline(ss, gen_line));
 }
 
 void TestU260523() {
