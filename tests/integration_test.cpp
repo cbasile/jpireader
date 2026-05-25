@@ -58,7 +58,67 @@ void TestEdm830() {
   }
   VerifyFlight72AgainstCsv(jpi.flights[1], csv_path);
 
+  std::string csv_45_path = FindTestData("Flt45.csv");
+  if (csv_45_path.empty()) {
+    std::cerr << "Skip: Flt45.csv not found" << std::endl;
+    return;
+  }
+  VerifyFlight72AgainstCsv(jpi.flights[0], csv_45_path);
+
   std::cout << "  Passed edm830.jpi" << std::endl;
+}
+
+// Keep the Verify helper declarations above TestEdm830
+// and keep their definitions below.
+
+void TestU260523() {
+  std::cout << "Testing U260523.JPI..." << std::endl;
+  std::string path = FindTestData("U260523.JPI");
+  if (path.empty()) {
+    std::cerr << "Skip: U260523.JPI not found" << std::endl;
+    return;
+  }
+
+  jpireader::JpiStream stream(path);
+  jpireader::JpiFile jpi = jpireader::JpiDecoder::Decode(stream);
+
+  assert(jpi.metadata.registration == "N111XX");
+  assert(jpi.metadata.protocol_version == 2);
+  assert(jpi.flights.size() == 21);
+
+  // Verify some specific flight record counts
+  assert(jpi.flights[0].flight_number == 138);
+  assert(jpi.flights[0].data.size() == 1249);
+
+  assert(jpi.flights[20].flight_number == 158);
+  assert(jpi.flights[20].data.size() == 4208);
+
+  std::string csv_path = FindTestData("Flt158.csv");
+  if (csv_path.empty()) {
+    std::cerr << "Skip: Flt158.csv not found" << std::endl;
+    return;
+  }
+  VerifyFlight158AgainstCsv(jpi.flights[20], csv_path);
+
+  // Verify flight 141
+  size_t flight_141_idx = -1;
+  for (size_t i = 0; i < jpi.flights.size(); ++i) {
+    if (jpi.flights[i].flight_number == 141) {
+      flight_141_idx = i;
+      break;
+    }
+  }
+  assert(flight_141_idx != static_cast<size_t>(-1));
+  assert(jpi.flights[flight_141_idx].data.size() == 2014);
+
+  std::string csv_141_path = FindTestData("Flt141.csv");
+  if (csv_141_path.empty()) {
+    std::cerr << "Skip: Flt141.csv not found" << std::endl;
+    return;
+  }
+  VerifyFlight158AgainstCsv(jpi.flights[flight_141_idx], csv_141_path);
+
+  std::cout << "  Passed U260523.JPI" << std::endl;
 }
 
 void VerifyFlight158AgainstCsv(const jpireader::Flight& flight,
@@ -147,37 +207,6 @@ void VerifyFlight72AgainstCsv(const jpireader::Flight& flight,
   }
 }
 
-void TestU260523() {
-  std::cout << "Testing U260523.JPI..." << std::endl;
-  std::string path = FindTestData("U260523.JPI");
-  if (path.empty()) {
-    std::cerr << "Skip: U260523.JPI not found" << std::endl;
-    return;
-  }
-
-  jpireader::JpiStream stream(path);
-  jpireader::JpiFile jpi = jpireader::JpiDecoder::Decode(stream);
-
-  assert(jpi.metadata.registration == "N111XX");
-  assert(jpi.metadata.protocol_version == 2);
-  assert(jpi.flights.size() == 21);
-
-  // Verify some specific flight record counts
-  assert(jpi.flights[0].flight_number == 138);
-  assert(jpi.flights[0].data.size() == 1249);
-
-  assert(jpi.flights[20].flight_number == 158);
-  assert(jpi.flights[20].data.size() == 4208);
-
-  std::string csv_path = FindTestData("Flt158.csv");
-  if (csv_path.empty()) {
-    std::cerr << "Skip: Flt158.csv not found" << std::endl;
-    return;
-  }
-  VerifyFlight158AgainstCsv(jpi.flights[20], csv_path);
-
-  std::cout << "  Passed U260523.JPI" << std::endl;
-}
 
 int main() {
   try {
