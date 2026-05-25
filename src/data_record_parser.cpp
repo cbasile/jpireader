@@ -12,16 +12,14 @@ const int NOT_AVAILABLE_VALUE_MARKER = 0;
 const int MAX_NUM_VALUE_BYTES = 16;
 const int DEFAULT_VALUE = 240;
 
-DataRecordParser::DataRecordParser(const MetadataUtil& metadata_util,
-                                   JpiStream& stream)
-    : metadata_util_(metadata_util),
-      stream_(stream),
-      value_flags_(MAX_NUM_VALUE_BYTES),
-      sign_flags_(MAX_NUM_VALUE_BYTES) {
+DataRecordParser::DataRecordParser(const MetadataUtil &metadata_util,
+                                   JpiStream &stream)
+    : metadata_util_(metadata_util), stream_(stream),
+      value_flags_(MAX_NUM_VALUE_BYTES), sign_flags_(MAX_NUM_VALUE_BYTES) {
   handlers_ = Metrics::GetBitToMetricMap(metadata_util);
 }
 
-DataRecord DataRecordParser::Parse(const DataRecord* previous_record) {
+DataRecord DataRecordParser::Parse(const DataRecord *previous_record) {
   value_flags_.Clear();
   sign_flags_.Clear();
   previous_record_repeat_count_ = 0;
@@ -45,13 +43,13 @@ DataRecord DataRecordParser::Parse(const DataRecord* previous_record) {
   return record;
 }
 
-void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index,
+void DataRecordParser::UpdateProtoValue(DataRecord &record, int bit_index,
                                         int value) {
   auto it = handlers_.find(bit_index);
   if (it == handlers_.end()) {
     return;
   }
-  const Metric& metric = *it->second;
+  const Metric &metric = *it->second;
   if (metric.id == MetricId::kNone) {
     record.parse_warnings.push_back(
         "Unexpected value for unsupported metric at bit " +
@@ -92,14 +90,15 @@ void DataRecordParser::UpdateProtoValue(DataRecord& record, int bit_index,
                         metric.field_index, new_value);
 }
 
-float DataRecordParser::GetExistingValueOrDefault(const DataRecord& record,
-                                                  const Metric& metric) {
+float DataRecordParser::GetExistingValueOrDefault(const DataRecord &record,
+                                                  const Metric &metric) {
   if (RecordUpdater::HasField(record, metric.id, metric.engine_index,
                               metric.field_index)) {
     return RecordUpdater::GetValue(record, metric.id, metric.engine_index,
                                    metric.field_index);
   } else {
-    if (metric.id == MetricId::kHorsepower && metric.engine_index == 0) return 0;
+    if (metric.id == MetricId::kHorsepower && metric.engine_index == 0)
+      return 0;
     return metric.Scale(metadata_util_, static_cast<float>(DEFAULT_VALUE));
   }
 }
@@ -108,7 +107,7 @@ int DataRecordParser::GetPreviousRecordRepeatCount() const {
   return previous_record_repeat_count_;
 }
 
-std::vector<int> DataRecordParser::GetBitIndexesFromMasks(DataRecord& record) {
+std::vector<int> DataRecordParser::GetBitIndexesFromMasks(DataRecord &record) {
   int decode_mask;
   int second_decode_mask;
   if (metadata_util_.IsDecodeMaskSingleByte()) {
@@ -156,15 +155,15 @@ std::vector<int> DataRecordParser::GetBitIndexesFromMasks(DataRecord& record) {
 }
 
 void DataRecordParser::CalculateExhaustGasTemperatureMaxDiffs(
-    DataRecord& record) {
-  for (auto& engine : record.engine) {
-    if (engine.exhaust_gas_temperature.empty()) continue;
-    int max_egt = *std::max_element(engine.exhaust_gas_temperature.begin(),
-                                    engine.exhaust_gas_temperature.end());
-    int min_egt = *std::min_element(engine.exhaust_gas_temperature.begin(),
-                                    engine.exhaust_gas_temperature.end());
-    engine.max_exhaust_gas_temperature_difference = max_egt - min_egt;
+    DataRecord &record) {
+  for (auto &engine : record.engine) {
+    if (engine.exhaust_gas_temperature.empty())
+      continue;
+    auto [min_it, max_it] =
+        std::minmax_element(engine.exhaust_gas_temperature.begin(),
+                            engine.exhaust_gas_temperature.end());
+    engine.max_exhaust_gas_temperature_difference = *max_it - *min_it;
   }
 }
 
-}  // namespace jpireader
+} // namespace jpireader
