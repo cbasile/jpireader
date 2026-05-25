@@ -50,6 +50,9 @@ std::vector<uint8_t> JpiStream::Peek(size_t num_bytes) {
   if (stream_.gcount() < static_cast<std::streamsize>(num_bytes)) {
     buffer.resize(stream_.gcount());
   }
+  if (stream_.fail() || stream_.eof()) {
+    stream_.clear();
+  }
   stream_.seekg(pos);
   return buffer;
 }

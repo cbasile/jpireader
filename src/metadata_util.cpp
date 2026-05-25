@@ -4,8 +4,8 @@
 
 namespace jpireader {
 
-MetadataUtil::MetadataUtil(const Metadata& metadata) : metadata_(metadata) {
-  for (const auto& flight : metadata.flight_metadata) {
+MetadataUtil::MetadataUtil(const Metadata &metadata) : metadata_(metadata) {
+  for (const auto &flight : metadata.flight_metadata) {
     flight_numbers_.push_back(flight.flight_number);
   }
 }
@@ -57,17 +57,22 @@ int MetadataUtil::GetNextFlightNumber(int flight_number) const {
 }
 
 bool MetadataUtil::IsLastFlight(int flight_number) const {
-  if (flight_numbers_.empty()) return true;
+  if (flight_numbers_.empty())
+    return true;
   return flight_numbers_.back() == flight_number;
 }
 
-int64_t MetadataUtil::Timegm(const std::tm& tm) {
+int64_t MetadataUtil::Timegm(const std::tm &tm) {
   static const int days_before_month[] = {0,   31,  59,  90,  120, 151,
                                           181, 212, 243, 273, 304, 334};
 
   int year = tm.tm_year + 1900;
-  int month = tm.tm_mon;     // 0-11
-  int day = tm.tm_mday - 1;  // 0-based
+  int month = tm.tm_mon; // 0-11
+  if (month < 0)
+    month = 0;
+  if (month > 11)
+    month = 11;
+  int day = tm.tm_mday - 1; // 0-based
 
   // Calculate leap years before this year
   int leap_days = (year - 1) / 4 - (year - 1) / 100 + (year - 1) / 400 -
@@ -88,4 +93,4 @@ int64_t MetadataUtil::Timegm(const std::tm& tm) {
   return epoch_days * 86400 + tm.tm_hour * 3600 + tm.tm_min * 60 + tm.tm_sec;
 }
 
-}  // namespace jpireader
+} // namespace jpireader
