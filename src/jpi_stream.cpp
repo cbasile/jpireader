@@ -23,8 +23,8 @@ JpiStream::~JpiStream() {
 uint8_t JpiStream::Read() {
   int c = stream_.get();
   if (c == EOF) {
-    throw std::runtime_error("Unexpected EOF at counter " +
-                             std::to_string(counter_));
+    throw JpiEofException("Unexpected EOF at counter " +
+                           std::to_string(counter_));
   }
   uint8_t b = static_cast<uint8_t>(c);
   counter_++;

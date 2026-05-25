@@ -78,17 +78,22 @@ void FlightParser::ParseFlightData(Flight& flight) {
 
   while (stream_.GetCounter() + get_min_record_size() <
          estimated_flight_length_bytes_) {
-    DataRecord data_record =
-        parser.Parse(previous_data_record ? &*previous_data_record : nullptr);
+    try {
+      DataRecord data_record =
+          parser.Parse(previous_data_record ? &*previous_data_record : nullptr);
 
-    int repeat_count = parser.GetPreviousRecordRepeatCount();
-    while (repeat_count-- > 0 && previous_data_record) {
-      flight.data.push_back(*previous_data_record);
+      int repeat_count = parser.GetPreviousRecordRepeatCount();
+      while (repeat_count-- > 0 && previous_data_record) {
+        flight.data.push_back(*previous_data_record);
+      }
+      flight.data.push_back(data_record);
+
+      flight.data_length = stream_.GetCounter();
+      previous_data_record = data_record;
+    } catch (const JpiEofException& e) {
+      flight.parse_warnings.push_back("Flight data parsing truncated due to EOF: " + std::string(e.what()));
+      break;
     }
-    flight.data.push_back(data_record);
-
-    flight.data_length = stream_.GetCounter();
-    previous_data_record = data_record;
   }
 
   // Peek for next flight header

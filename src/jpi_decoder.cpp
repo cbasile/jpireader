@@ -15,7 +15,13 @@ JpiFile JpiDecoder::Decode(JpiStream& stream) {
   
   for (const auto& flight_metadata : jpi_file.metadata.flight_metadata) {
     FlightParser flight_parser(stream, flight_metadata, metadata_util);
-    jpi_file.flights.push_back(flight_parser.Parse());
+    try {
+      jpi_file.flights.push_back(flight_parser.Parse());
+    } catch (const JpiEofException& e) {
+      jpi_file.metadata.parse_warnings.push_back(
+          "Flights parsing truncated due to EOF: " + std::string(e.what()));
+      break;
+    }
   }
   
   return jpi_file;

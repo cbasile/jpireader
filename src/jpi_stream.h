@@ -8,6 +8,12 @@
 
 namespace jpireader {
 
+class JpiEofException : public std::runtime_error {
+ public:
+  explicit JpiEofException(const std::string& message)
+      : std::runtime_error(message) {}
+};
+
 class JpiStream {
  public:
   explicit JpiStream(const std::string& filename);
