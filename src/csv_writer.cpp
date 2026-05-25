@@ -25,52 +25,6 @@ std::string FormatTime(int64_t timestamp) {
   return std::string(buf);
 }
 
-double GetFlight158Lhrs(int r) {
-  if (r < 134) return 153.5;
-  if (r < 373) return 153.6;
-  if (r < 567) return 153.7;
-  double val = 153.8 + ((r - 567) / 180) * 0.1;
-  return std::min(val, 155.7);
-}
-
-double GetFlight158Rhrs(int r) {
-  if (r < 52) return 155.5;
-  if (r < 232) return 155.6;
-  if (r < 535) return 155.7;
-  double val = 155.8 + ((r - 535) / 180) * 0.1;
-  return std::min(val, 157.8);
-}
-
-double GetFlight141Lhrs(int r) {
-  if (r < 151) return 130.2;
-  if (r < 331) return 130.3;
-  if (r < 514) return 130.4;
-  if (r < 694) return 130.5;
-  if (r < 874) return 130.6;
-  if (r < 1054) return 130.7;
-  if (r < 1234) return 130.8;
-  if (r < 1425) return 130.9;
-  if (r < 1605) return 131.0;
-  if (r < 1785) return 131.1;
-  if (r < 2008) return 131.2;
-  return 131.3;
-}
-
-double GetFlight141Rhrs(int r) {
-  if (r < 91) return 131.7;
-  if (r < 271) return 131.8;
-  if (r < 451) return 131.9;
-  if (r < 631) return 132.0;
-  if (r < 811) return 132.1;
-  if (r < 991) return 132.2;
-  if (r < 1171) return 132.3;
-  if (r < 1361) return 132.4;
-  if (r < 1541) return 132.5;
-  if (r < 1721) return 132.6;
-  if (r < 1901) return 132.7;
-  return 132.8;
-}
-
 }  // namespace
 
 void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
@@ -81,27 +35,36 @@ void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
         "RUSD,RHRS,MARK"
      << std::endl;
 
-  // Comments (for flight 158 and 141)
-  if (flight.flight_number == 158) {
-    os << "Left Engine - Tach Start = 153.5,Tach End = 155.7,Tach Duration = "
-          "2.2"
-       << std::endl;
-    os << "Right Engine - Tach Start = 155.5 ,Tach End = 157.8,Tach Duration = "
-          "2.3"
-       << std::endl;
-  } else if (flight.flight_number == 141) {
-    os << "Left Engine - Tach Start = 130.2,Tach End = 131.3,Tach Duration = "
-          "1.1"
-       << std::endl;
-    os << "Right Engine - Tach Start = 131.7 ,Tach End = 132.8,Tach Duration = "
-          "1.1"
-       << std::endl;
-  } else {
-    os << "Left Engine - Tach Start = 0.0,Tach End = 0.0,Tach Duration = 0.0"
-       << std::endl;
-    os << "Right Engine - Tach Start = 0.0 ,Tach End = 0.0,Tach Duration = 0.0"
-       << std::endl;
+  // Comments (programmatic tach start/end/duration)
+  double l_start = 0.0, l_end = 0.0;
+  double r_start = 0.0, r_end = 0.0;
+  if (!flight.data.empty()) {
+    const auto& front = flight.data.front();
+    const auto& back = flight.data.back();
+    if (front.engine.size() > 0 && front.engine[0].hours) {
+      l_start = *front.engine[0].hours;
+    }
+    if (back.engine.size() > 0 && back.engine[0].hours) {
+      l_end = *back.engine[0].hours;
+    }
+    if (front.engine.size() > 1 && front.engine[1].hours) {
+      r_start = *front.engine[1].hours;
+    }
+    if (back.engine.size() > 1 && back.engine[1].hours) {
+      r_end = *back.engine[1].hours;
+    }
   }
+  double l_duration = l_end - l_start;
+  double r_duration = r_end - r_start;
+
+  auto comment_flags = os.flags();
+  os << "Left Engine - Tach Start = " << std::fixed << std::setprecision(1) << l_start
+     << ",Tach End = " << l_end
+     << ",Tach Duration = " << l_duration << std::endl;
+  os << "Right Engine - Tach Start = " << r_start
+     << " ,Tach End = " << r_end
+     << ",Tach Duration = " << r_duration << std::endl;
+  os.flags(comment_flags);
 
   int64_t current_time = flight.start_timestamp;
   bool lean_find_active = false;
@@ -181,13 +144,9 @@ void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
     os << ",";
 
     // LHRS
-    if (flight.flight_number == 158) {
+    if (record.engine.size() > 0 && record.engine[0].hours) {
       auto old_flags = os.flags();
-      os << std::fixed << std::setprecision(1) << GetFlight158Lhrs(idx);
-      os.flags(old_flags);
-    } else if (flight.flight_number == 141) {
-      auto old_flags = os.flags();
-      os << std::fixed << std::setprecision(1) << GetFlight141Lhrs(idx);
+      os << std::fixed << std::setprecision(1) << *record.engine[0].hours;
       os.flags(old_flags);
     } else {
       os << "0.0";
@@ -250,13 +209,9 @@ void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
     os << ",";
 
     // RHRS
-    if (flight.flight_number == 158) {
+    if (record.engine.size() > 1 && record.engine[1].hours) {
       auto old_flags = os.flags();
-      os << std::fixed << std::setprecision(1) << GetFlight158Rhrs(idx);
-      os.flags(old_flags);
-    } else if (flight.flight_number == 141) {
-      auto old_flags = os.flags();
-      os << std::fixed << std::setprecision(1) << GetFlight141Rhrs(idx);
+      os << std::fixed << std::setprecision(1) << *record.engine[1].hours;
       os.flags(old_flags);
     } else {
       os << "0.0";

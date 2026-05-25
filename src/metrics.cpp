@@ -108,7 +108,7 @@ const std::vector<Metric> Metrics::METRICS = {
     Metric(V4 | V5, 73, 77, MetricId::kNone, 0, 0),
     Metric(V4 | V5, 74, MetricId::kTorque, 0, 0),
     Metric(V4 | V5, 75, MetricId::kNone, 0, 0),
-    Metric(V4 | V5, 78, 79, MetricId::kHours, ScaleFactor::TEN, 0, 0),
+    Metric(V2 | V4 | V5, 78, 79, MetricId::kHours, ScaleFactor::TEN, 0, 0),
 
     Metric(V4, 84, MetricId::kNone, ScaleFactor::TEN_IF_GPH, 0, 0),
 
@@ -125,7 +125,7 @@ const std::vector<Metric> Metrics::METRICS = {
     Metric(V5, 97, 101, MetricId::kNone, 0, 0),
     Metric(V5, 98, MetricId::kTorque, 1, 0),
     Metric(V5, 99, MetricId::kNone, 0, 0),
-    Metric(V5, 102, 103, MetricId::kHours, ScaleFactor::TEN, 1, 0),
+    Metric(V2 | V5, 102, 103, MetricId::kHours, ScaleFactor::TEN, 1, 0),
 
     Metric(V5, 104, 108, MetricId::kExhaustGasTemperature, 0, 6),
     Metric(V5, 105, 109, MetricId::kExhaustGasTemperature, 0, 7),
