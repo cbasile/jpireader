@@ -13,17 +13,18 @@
 
 namespace fs = std::filesystem;
 
-void VerifyFlight158AgainstCsv(const jpireader::Flight& flight,
-                               const std::string& csv_path);
-void VerifyFlight72AgainstCsv(const jpireader::Flight& flight,
-                              const std::string& csv_path);
+void VerifyFlight158AgainstCsv(const jpireader::Flight &flight,
+                               const std::string &csv_path);
+void VerifyFlight72AgainstCsv(const jpireader::Flight &flight,
+                              const std::string &csv_path);
 
-std::string FindTestData(const std::string& filename) {
+std::string FindTestData(const std::string &filename) {
   std::vector<std::string> search_paths = {"testdata/" + filename,
                                            "../testdata/" + filename,
                                            "../../testdata/" + filename};
-  for (const auto& path : search_paths) {
-    if (fs::exists(path)) return path;
+  for (const auto &path : search_paths) {
+    if (fs::exists(path))
+      return path;
   }
   return "";
 }
@@ -121,8 +122,8 @@ void TestU260523() {
   std::cout << "  Passed U260523.JPI" << std::endl;
 }
 
-void VerifyFlight158AgainstCsv(const jpireader::Flight& flight,
-                               const std::string& csv_path) {
+void VerifyFlight158AgainstCsv(const jpireader::Flight &flight,
+                               const std::string &csv_path) {
   std::ifstream ifs(csv_path);
   assert(ifs.is_open());
 
@@ -164,8 +165,8 @@ void VerifyFlight158AgainstCsv(const jpireader::Flight& flight,
   }
 }
 
-void VerifyFlight72AgainstCsv(const jpireader::Flight& flight,
-                              const std::string& csv_path) {
+void VerifyFlight72AgainstCsv(const jpireader::Flight &flight,
+                              const std::string &csv_path) {
   std::ifstream ifs(csv_path);
   assert(ifs.is_open());
 
@@ -207,13 +208,12 @@ void VerifyFlight72AgainstCsv(const jpireader::Flight& flight,
   }
 }
 
-
 int main() {
   try {
     TestEdm830();
     TestU260523();
     std::cout << "All tests passed!" << std::endl;
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     std::cerr << "Test failed with exception: " << e.what() << std::endl;
     return 1;
   }

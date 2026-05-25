@@ -1,8 +1,8 @@
 #include "src/csv_writer.h"
-#include <iomanip>
-#include <ctime>
-#include <cstdio>
 #include <algorithm>
+#include <cstdio>
+#include <ctime>
+#include <iomanip>
 
 namespace jpireader {
 
@@ -11,9 +11,8 @@ namespace {
 std::string FormatDate(int64_t timestamp) {
   std::time_t t = timestamp;
   std::tm *tm = std::gmtime(&t);
-  return std::to_string(tm->tm_mon + 1) + "/" +
-         std::to_string(tm->tm_mday) + "/" +
-         std::to_string(tm->tm_year + 1900);
+  return std::to_string(tm->tm_mon + 1) + "/" + std::to_string(tm->tm_mday) +
+         "/" + std::to_string(tm->tm_year + 1900);
 }
 
 std::string FormatTime(int64_t timestamp) {
@@ -25,7 +24,7 @@ std::string FormatTime(int64_t timestamp) {
   return std::string(buf);
 }
 
-}  // namespace
+} // namespace
 
 void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
   // Header
@@ -39,8 +38,8 @@ void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
   double l_start = 0.0, l_end = 0.0;
   double r_start = 0.0, r_end = 0.0;
   if (!flight.data.empty()) {
-    const auto& front = flight.data.front();
-    const auto& back = flight.data.back();
+    const auto &front = flight.data.front();
+    const auto &back = flight.data.back();
     if (front.engine.size() > 0 && front.engine[0].hours) {
       l_start = *front.engine[0].hours;
     }
@@ -58,11 +57,10 @@ void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
   double r_duration = r_end - r_start;
 
   auto comment_flags = os.flags();
-  os << "Left Engine - Tach Start = " << std::fixed << std::setprecision(1) << l_start
-     << ",Tach End = " << l_end
-     << ",Tach Duration = " << l_duration << std::endl;
-  os << "Right Engine - Tach Start = " << r_start
-     << " ,Tach End = " << r_end
+  os << "Left Engine - Tach Start = " << std::fixed << std::setprecision(1)
+     << l_start << ",Tach End = " << l_end << ",Tach Duration = " << l_duration
+     << std::endl;
+  os << "Right Engine - Tach Start = " << r_start << " ,Tach End = " << r_end
      << ",Tach Duration = " << r_duration << std::endl;
   os.flags(comment_flags);
 
@@ -75,9 +73,8 @@ void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
     os << FormatTime(current_time) << ",";
 
     // Engine 1
-    const auto &eng1 = (record.engine.size() > 0)
-                           ? record.engine[0]
-                           : EngineDataRecord();
+    const auto &eng1 =
+        (record.engine.size() > 0) ? record.engine[0] : EngineDataRecord();
     // LE1..6
     for (int i = 0; i < 6; ++i) {
       if (i < static_cast<int>(eng1.exhaust_gas_temperature.size())) {
@@ -154,9 +151,8 @@ void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
     os << ",";
 
     // Engine 2
-    const auto &eng2 = (record.engine.size() > 1)
-                           ? record.engine[1]
-                           : EngineDataRecord();
+    const auto &eng2 =
+        (record.engine.size() > 1) ? record.engine[1] : EngineDataRecord();
     // RE1..6
     for (int i = 0; i < 6; ++i) {
       if (i < static_cast<int>(eng2.exhaust_gas_temperature.size())) {
@@ -223,8 +219,8 @@ void PrintFlightCsvCustom(std::ostream &os, const Flight &flight) {
     if (mark_val == 2 || mark_val == 4 || mark_val == 242 || mark_val == 244) {
       os << "[";
       lean_find_active = true;
-    } else if (mark_val == 3 || mark_val == 5 ||
-               mark_val == 243 || mark_val == 245) {
+    } else if (mark_val == 3 || mark_val == 5 || mark_val == 243 ||
+               mark_val == 245) {
       os << "]";
       lean_find_active = false;
     } else if (record.mark != Mark::NOT_MARKED) {
@@ -250,8 +246,10 @@ void PrintFlightCsv(std::ostream &os, const Flight &flight, int max_engines,
   for (int e = 0; e < max_engines; ++e) {
     std::string prefix =
         (max_engines > 1) ? ("E" + std::to_string(e + 1) + "_") : "";
-    for (int i = 0; i < max_egt; ++i) os << "," << prefix << "EGT" << (i + 1);
-    for (int i = 0; i < max_cht; ++i) os << "," << prefix << "CHT" << (i + 1);
+    for (int i = 0; i < max_egt; ++i)
+      os << "," << prefix << "EGT" << (i + 1);
+    for (int i = 0; i < max_cht; ++i)
+      os << "," << prefix << "CHT" << (i + 1);
     os << "," << prefix << "RPM";
     os << "," << prefix << "MAP";
     os << "," << prefix << "FuelFlow";
@@ -268,7 +266,8 @@ void PrintFlightCsv(std::ostream &os, const Flight &flight, int max_engines,
     os << flight.recording_interval_secs << ",";
 
     // Voltage
-    if (!record.voltage.empty()) os << record.voltage[0];
+    if (!record.voltage.empty())
+      os << record.voltage[0];
     os << ",";
 
     // OAT
@@ -286,7 +285,7 @@ void PrintFlightCsv(std::ostream &os, const Flight &flight, int max_engines,
 
     // Engine Data
     for (int e = 0; e < max_engines; ++e) {
-      os << ",";  // separator before each engine field group
+      os << ","; // separator before each engine field group
       if (e < static_cast<int>(record.engine.size())) {
         const auto &engine = record.engine[e];
 
@@ -294,7 +293,8 @@ void PrintFlightCsv(std::ostream &os, const Flight &flight, int max_engines,
         for (int i = 0; i < max_egt; ++i) {
           if (i < static_cast<int>(engine.exhaust_gas_temperature.size()))
             os << engine.exhaust_gas_temperature[i];
-          if (i < max_egt - 1) os << ",";
+          if (i < max_egt - 1)
+            os << ",";
         }
         os << ",";
 
@@ -302,24 +302,32 @@ void PrintFlightCsv(std::ostream &os, const Flight &flight, int max_engines,
         for (int i = 0; i < max_cht; ++i) {
           if (i < static_cast<int>(engine.cylinder_head_temperature.size()))
             os << engine.cylinder_head_temperature[i];
-          if (i < max_cht - 1) os << ",";
+          if (i < max_cht - 1)
+            os << ",";
         }
         os << ",";
 
         // Other Engine metrics
-        if (engine.rpm) os << *engine.rpm;
+        if (engine.rpm)
+          os << *engine.rpm;
         os << ",";
-        if (engine.manifold_pressure) os << *engine.manifold_pressure;
+        if (engine.manifold_pressure)
+          os << *engine.manifold_pressure;
         os << ",";
-        if (!engine.fuel_flow.empty()) os << engine.fuel_flow[0];
+        if (!engine.fuel_flow.empty())
+          os << engine.fuel_flow[0];
         os << ",";
-        if (!engine.fuel_used.empty()) os << engine.fuel_used[0];
+        if (!engine.fuel_used.empty())
+          os << engine.fuel_used[0];
         os << ",";
-        if (engine.oil_temperature) os << *engine.oil_temperature;
+        if (engine.oil_temperature)
+          os << *engine.oil_temperature;
         os << ",";
-        if (engine.oil_pressure) os << *engine.oil_pressure;
+        if (engine.oil_pressure)
+          os << *engine.oil_pressure;
       } else {
-        for (int i = 0; i < max_egt + max_cht + 5; ++i) os << ",";
+        for (int i = 0; i < max_egt + max_cht + 5; ++i)
+          os << ",";
       }
     }
 
@@ -330,7 +338,8 @@ void PrintFlightCsv(std::ostream &os, const Flight &flight, int max_engines,
 
 void PrintFlightCsvEdm830(std::ostream &os, const Flight &flight) {
   // Header
-  os << "INDEX,DATE,TIME,E1,E2,E3,E4,E5,E6,C1,C2,C3,C4,C5,C6,OAT,DIF,CLD,MAP,RPM,"
+  os << "INDEX,DATE,TIME,E1,E2,E3,E4,E5,E6,C1,C2,C3,C4,C5,C6,OAT,DIF,CLD,MAP,"
+        "RPM,"
         "HP,FF,FF2,OILP,BAT,OILT,USD,USD2,HRS,MARK"
      << std::endl;
 
@@ -363,9 +372,8 @@ void PrintFlightCsvEdm830(std::ostream &os, const Flight &flight) {
     os << FormatDate(current_time) << ",";
     os << FormatTime(current_time) << ",";
 
-    const auto &eng = (record.engine.size() > 0)
-                          ? record.engine[0]
-                          : EngineDataRecord();
+    const auto &eng =
+        (record.engine.size() > 0) ? record.engine[0] : EngineDataRecord();
 
     // E1..6
     for (int i = 0; i < 6; ++i) {
@@ -480,8 +488,8 @@ void PrintFlightCsvEdm830(std::ostream &os, const Flight &flight) {
     if (mark_val == 2 || mark_val == 4 || mark_val == 242 || mark_val == 244) {
       os << "[";
       lean_find_active = true;
-    } else if (mark_val == 3 || mark_val == 5 ||
-               mark_val == 243 || mark_val == 245) {
+    } else if (mark_val == 3 || mark_val == 5 || mark_val == 243 ||
+               mark_val == 245) {
       os << "]";
       lean_find_active = false;
     }
@@ -495,4 +503,4 @@ void PrintFlightCsvEdm830(std::ostream &os, const Flight &flight) {
   }
 }
 
-}  // namespace jpireader
+} // namespace jpireader

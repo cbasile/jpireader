@@ -10,10 +10,9 @@
 
 namespace jpireader {
 
-FlightParser::FlightParser(JpiStream& stream, const FlightMetadata& metadata,
-                           const MetadataUtil& metadata_util)
-    : stream_(stream),
-      flight_number_(metadata.flight_number),
+FlightParser::FlightParser(JpiStream &stream, const FlightMetadata &metadata,
+                           const MetadataUtil &metadata_util)
+    : stream_(stream), flight_number_(metadata.flight_number),
       estimated_flight_length_bytes_(metadata.flight_data_length_words * 2),
       metadata_util_(metadata_util) {}
 
@@ -24,7 +23,7 @@ Flight FlightParser::Parse() {
   return flight;
 }
 
-void FlightParser::ParseFlightHeader(Flight& flight) {
+void FlightParser::ParseFlightHeader(Flight &flight) {
   stream_.ResetCounter();
   stream_.ClearCurrentRecord();
 
@@ -41,20 +40,20 @@ void FlightParser::ParseFlightHeader(Flight& flight) {
   flight.sensors = SensorParser(low, high).Parse();
 
   if (metadata_util_.HasExtraFlightHeaderConfiguration()) {
-    stream_.ReadWord();  // unusedConfigLow
-    stream_.ReadWord();  // unusedConfigHigh
+    stream_.ReadWord(); // unusedConfigLow
+    stream_.ReadWord(); // unusedConfigHigh
     if (metadata_util_.IsBuildNumberAtLeast(880)) {
-      stream_.ReadWord();  // unusedConfig
+      stream_.ReadWord(); // unusedConfig
     }
     if (metadata_util_.IsModelNumber(790)) {
-      stream_.ReadWord();  // unknown 790
-      stream_.ReadWord();  // unknown 790
-      stream_.ReadWord();  // unknown 790
-      stream_.ReadWord();  // unknown 790
+      stream_.ReadWord(); // unknown 790
+      stream_.ReadWord(); // unknown 790
+      stream_.ReadWord(); // unknown 790
+      stream_.ReadWord(); // unknown 790
     }
   }
 
-  stream_.ReadWord();  // unknown
+  stream_.ReadWord(); // unknown
   flight.recording_interval_secs = stream_.ReadWord();
 
   int packed_date = stream_.ReadWord();
@@ -68,7 +67,7 @@ void FlightParser::ParseFlightHeader(Flight& flight) {
   flight.header_length = stream_.GetCurrentRecordSize();
 }
 
-void FlightParser::ParseFlightData(Flight& flight) {
+void FlightParser::ParseFlightData(Flight &flight) {
   DataRecordParser parser(metadata_util_, stream_);
   std::optional<DataRecord> previous_data_record;
 
@@ -90,8 +89,9 @@ void FlightParser::ParseFlightData(Flight& flight) {
 
       flight.data_length = stream_.GetCounter();
       previous_data_record = data_record;
-    } catch (const JpiEofException& e) {
-      flight.parse_warnings.push_back("Flight data parsing truncated due to EOF: " + std::string(e.what()));
+    } catch (const JpiEofException &e) {
+      flight.parse_warnings.push_back(
+          "Flight data parsing truncated due to EOF: " + std::string(e.what()));
       break;
     }
   }
@@ -134,4 +134,4 @@ int64_t FlightParser::ParseUnixTimestamp(int packed_date, int packed_time) {
   return MetadataUtil::Timegm(tm);
 }
 
-}  // namespace jpireader
+} // namespace jpireader

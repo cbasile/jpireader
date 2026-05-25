@@ -2,9 +2,11 @@
 
 namespace jpireader {
 
-int Metrics::GetVersionSelector(const MetadataUtil& util) {
-  if (util.IsModelNumber(760) || util.IsModelNumber(790)) return V2;
-  if (util.IsModelNumber(960)) return V5;
+int Metrics::GetVersionSelector(const MetadataUtil &util) {
+  if (util.IsModelNumber(760) || util.IsModelNumber(790))
+    return V2;
+  if (util.IsModelNumber(960))
+    return V5;
   if (util.IsModelNumberAtLeast(900)) {
     return util.IsFirmwareVersionAtLeast(108) ? V4 : V3;
   } else {
@@ -12,11 +14,11 @@ int Metrics::GetVersionSelector(const MetadataUtil& util) {
   }
 }
 
-std::map<int, const Metric*> Metrics::GetBitToMetricMap(
-    const MetadataUtil& util) {
+std::map<int, const Metric *>
+Metrics::GetBitToMetricMap(const MetadataUtil &util) {
   int selector = GetVersionSelector(util);
-  std::map<int, const Metric*> result;
-  for (const auto& metric : METRICS) {
+  std::map<int, const Metric *> result;
+  for (const auto &metric : METRICS) {
     if ((metric.version_mask & selector) > 0) {
       result[metric.low_byte_bit] = &metric;
       if (metric.high_byte_bit) {
@@ -28,33 +30,50 @@ std::map<int, const Metric*> Metrics::GetBitToMetricMap(
 }
 
 const std::vector<Metric> Metrics::METRICS = {
-    Metric(V1 | V2 | V3 | V4 | V5, 0, 48, MetricId::kExhaustGasTemperature, 0, 0),
-    Metric(V1 | V2 | V3 | V4 | V5, 1, 49, MetricId::kExhaustGasTemperature, 0, 1),
-    Metric(V1 | V2 | V3 | V4 | V5, 2, 50, MetricId::kExhaustGasTemperature, 0, 2),
-    Metric(V1 | V2 | V3 | V4 | V5, 3, 51, MetricId::kExhaustGasTemperature, 0, 3),
-    Metric(V1 | V2 | V3 | V4 | V5, 4, 52, MetricId::kExhaustGasTemperature, 0, 4),
-    Metric(V1 | V2 | V3 | V4 | V5, 5, 53, MetricId::kExhaustGasTemperature, 0, 5),
-    Metric(V1 | V2 | V3 | V4 | V5, 6, 54, MetricId::kTurbineInletTemperature, 0, 0),
-    Metric(V1 | V2 | V3 | V4 | V5, 7, 55, MetricId::kTurbineInletTemperature, 0, 1),
+    Metric(V1 | V2 | V3 | V4 | V5, 0, 48, MetricId::kExhaustGasTemperature, 0,
+           0),
+    Metric(V1 | V2 | V3 | V4 | V5, 1, 49, MetricId::kExhaustGasTemperature, 0,
+           1),
+    Metric(V1 | V2 | V3 | V4 | V5, 2, 50, MetricId::kExhaustGasTemperature, 0,
+           2),
+    Metric(V1 | V2 | V3 | V4 | V5, 3, 51, MetricId::kExhaustGasTemperature, 0,
+           3),
+    Metric(V1 | V2 | V3 | V4 | V5, 4, 52, MetricId::kExhaustGasTemperature, 0,
+           4),
+    Metric(V1 | V2 | V3 | V4 | V5, 5, 53, MetricId::kExhaustGasTemperature, 0,
+           5),
+    Metric(V1 | V2 | V3 | V4 | V5, 6, 54, MetricId::kTurbineInletTemperature, 0,
+           0),
+    Metric(V1 | V2 | V3 | V4 | V5, 7, 55, MetricId::kTurbineInletTemperature, 0,
+           1),
 
     Metric(V1 | V2 | V3 | V4 | V5, 8, MetricId::kCylinderHeadTemperature, 0, 0),
     Metric(V1 | V2 | V3 | V4 | V5, 9, MetricId::kCylinderHeadTemperature, 0, 1),
-    Metric(V1 | V2 | V3 | V4 | V5, 10, MetricId::kCylinderHeadTemperature, 0, 2),
-    Metric(V1 | V2 | V3 | V4 | V5, 11, MetricId::kCylinderHeadTemperature, 0, 3),
-    Metric(V1 | V2 | V3 | V4 | V5, 12, MetricId::kCylinderHeadTemperature, 0, 4),
-    Metric(V1 | V2 | V3 | V4 | V5, 13, MetricId::kCylinderHeadTemperature, 0, 5),
-    Metric(V1 | V2 | V3 | V4 | V5, 14, MetricId::kCylinderHeadTemperatureCoolingRate, 0, 0),
+    Metric(V1 | V2 | V3 | V4 | V5, 10, MetricId::kCylinderHeadTemperature, 0,
+           2),
+    Metric(V1 | V2 | V3 | V4 | V5, 11, MetricId::kCylinderHeadTemperature, 0,
+           3),
+    Metric(V1 | V2 | V3 | V4 | V5, 12, MetricId::kCylinderHeadTemperature, 0,
+           4),
+    Metric(V1 | V2 | V3 | V4 | V5, 13, MetricId::kCylinderHeadTemperature, 0,
+           5),
+    Metric(V1 | V2 | V3 | V4 | V5, 14,
+           MetricId::kCylinderHeadTemperatureCoolingRate, 0, 0),
     Metric(V1 | V2 | V3 | V4 | V5, 15, MetricId::kOilTemperature, 0, 0),
 
     Metric(V1 | V2 | V3 | V4 | V5, 16, MetricId::kMark),
     Metric(V1 | V3 | V4 | V5, 17, MetricId::kOilPressure, 0, 0),
-    Metric(V1 | V2 | V3 | V4 | V5, 18, MetricId::kCompressorDischargeTemperature, 0, 0),
+    Metric(V1 | V2 | V3 | V4 | V5, 18,
+           MetricId::kCompressorDischargeTemperature, 0, 0),
     Metric(V1 | V3 | V4 | V5, 19, MetricId::kInductionAirTemperature, 0, 0),
     Metric(V2, 19, MetricId::kManifoldPressure, ScaleFactor::TEN, 1, 0),
-    Metric(V1 | V2 | V3 | V4 | V5, 20, MetricId::kVoltage, ScaleFactor::TEN, 0, 0),
+    Metric(V1 | V2 | V3 | V4 | V5, 20, MetricId::kVoltage, ScaleFactor::TEN, 0,
+           0),
     Metric(V1 | V2 | V3 | V4 | V5, 21, MetricId::kOutsideAirTemperature),
-    Metric(V1 | V2 | V3 | V4 | V5, 22, MetricId::kFuelUsed, ScaleFactor::TEN_IF_GPH, 0, 0),
-    Metric(V1 | V2 | V3 | V4 | V5, 23, MetricId::kFuelFlow, ScaleFactor::TEN_IF_GPH, 0, 0),
+    Metric(V1 | V2 | V3 | V4 | V5, 22, MetricId::kFuelUsed,
+           ScaleFactor::TEN_IF_GPH, 0, 0),
+    Metric(V1 | V2 | V3 | V4 | V5, 23, MetricId::kFuelFlow,
+           ScaleFactor::TEN_IF_GPH, 0, 0),
 
     Metric(V1 | V3 | V4, 24, 56, MetricId::kExhaustGasTemperature, 0, 6),
     Metric(V2 | V5, 24, 56, MetricId::kExhaustGasTemperature, 1, 0),
@@ -81,7 +100,8 @@ const std::vector<Metric> Metrics::METRICS = {
     Metric(V2 | V5, 38, MetricId::kCylinderHeadTemperatureCoolingRate, 1, 0),
     Metric(V2 | V5, 39, MetricId::kOilTemperature, 1, 0),
 
-    Metric(V1 | V2 | V3 | V4 | V5, 40, MetricId::kManifoldPressure, ScaleFactor::TEN, 0, 0),
+    Metric(V1 | V2 | V3 | V4 | V5, 40, MetricId::kManifoldPressure,
+           ScaleFactor::TEN, 0, 0),
     Metric(V1 | V2 | V3 | V4 | V5, 41, 42, MetricId::kRpm, 0, 0),
     Metric(V2 | V5, 43, 44, MetricId::kRpm, 1, 0),
     Metric(V4, 44, MetricId::kHydraulicPressure, 0, 1),
@@ -149,4 +169,4 @@ const std::vector<Metric> Metrics::METRICS = {
     Metric(V5, 127, MetricId::kHydraulicPressure, 1, 1),
 };
 
-}  // namespace jpireader
+} // namespace jpireader

@@ -9,14 +9,14 @@
 namespace jpireader {
 
 class JpiEofException : public std::runtime_error {
- public:
-  explicit JpiEofException(const std::string& message)
+public:
+  explicit JpiEofException(const std::string &message)
       : std::runtime_error(message) {}
 };
 
 class JpiStream {
- public:
-  explicit JpiStream(const std::string& filename);
+public:
+  explicit JpiStream(const std::string &filename);
   ~JpiStream();
 
   uint8_t Read();
@@ -30,12 +30,12 @@ class JpiStream {
   std::string GetCurrentRecordAsHexString() const;
   std::optional<std::string> GetChecksumFailureMessage();
 
- private:
+private:
   std::ifstream stream_;
   std::vector<uint8_t> current_record_;
   int counter_ = 0;
 };
 
-}  // namespace jpireader
+} // namespace jpireader
 
-#endif  // SRC_JPI_STREAM_H_
+#endif // SRC_JPI_STREAM_H_

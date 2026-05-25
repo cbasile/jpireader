@@ -7,7 +7,7 @@
 
 namespace jpireader {
 
-JpiStream::JpiStream(const std::string& filename)
+JpiStream::JpiStream(const std::string &filename)
     : stream_(filename, std::ios::binary) {
   if (!stream_) {
     throw std::runtime_error("Could not open file: " + filename);
@@ -24,7 +24,7 @@ uint8_t JpiStream::Read() {
   int c = stream_.get();
   if (c == EOF) {
     throw JpiEofException("Unexpected EOF at counter " +
-                           std::to_string(counter_));
+                          std::to_string(counter_));
   }
   uint8_t b = static_cast<uint8_t>(c);
   counter_++;
@@ -46,7 +46,7 @@ void JpiStream::Skip(size_t num_bytes) {
 std::vector<uint8_t> JpiStream::Peek(size_t num_bytes) {
   std::streampos pos = stream_.tellg();
   std::vector<uint8_t> buffer(num_bytes);
-  stream_.read(reinterpret_cast<char*>(buffer.data()), num_bytes);
+  stream_.read(reinterpret_cast<char *>(buffer.data()), num_bytes);
   if (stream_.gcount() < static_cast<std::streamsize>(num_bytes)) {
     buffer.resize(stream_.gcount());
   }
@@ -90,4 +90,4 @@ std::optional<std::string> JpiStream::GetChecksumFailureMessage() {
   return std::nullopt;
 }
 
-}  // namespace jpireader
+} // namespace jpireader
